@@ -24,9 +24,6 @@ app.use(cors({
 app.options(/.*/, cors());
 app.use(express.json());
 
-// Serve static files from frontend build
-app.use(express.static(path.join(__dirname, 'public')));
-
 // ✅ ADD THESE RIGHT HERE
 app.use('/uploads', express.static('uploads'));
 
@@ -601,12 +598,6 @@ app.delete('/api/admin/registrations/:id', verifyAdmin, async (req, res) => {
         console.error('DELETE /api/admin/registrations/:id error:', error);
         res.status(500).json({ message: "Error cancelling registration", error: error.message });
     }
-});
-
-// ===== CATCH-ALL ROUTE FOR REACT ROUTER =====
-// Serve index.html for any non-API routes (for React Router)
-app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ===== START SERVER =====
