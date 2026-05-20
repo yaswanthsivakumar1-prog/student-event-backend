@@ -7,6 +7,11 @@ const bcrypt = require("bcryptjs");
 const multer = require('multer');
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error("❌ JWT_SECRET is not set. Login/signup will fail on Render.");
+}
+
 const Event = require("./models/Events");
 const User = require("./models/Users");
 const verifyToken = require("./middleware/auth.js");
@@ -233,7 +238,11 @@ app.post("/api/signup", async (req, res) => {
 
         await newUser.save();
 
-        const token = jwt.sign({ userId: newUser._id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+        if (!JWT_SECRET) {
+            return res.status(500).json({ message: "Server misconfiguration: JWT_SECRET is missing" });
+        }
+
+        const token = jwt.sign({ userId: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "30d" });
 
         res.status(201).json({
             token,
@@ -272,7 +281,11 @@ app.post("/api/login", async (req, res) => {
             return res.status(400).json({ message: "Invalid username or password" });
         }
 
-        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+        if (!JWT_SECRET) {
+            return res.status(500).json({ message: "Server misconfiguration: JWT_SECRET is missing" });
+        }
+
+        const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: "30d" });
         res.json({
             token: token,
             user: {
