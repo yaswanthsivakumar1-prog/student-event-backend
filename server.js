@@ -605,7 +605,7 @@ app.delete('/api/admin/registrations/:id', verifyAdmin, async (req, res) => {
 
 // ===== CATCH-ALL ROUTE FOR REACT ROUTER =====
 // Serve index.html for any non-API routes (for React Router)
-app.get('*', (req, res) => {
+app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
