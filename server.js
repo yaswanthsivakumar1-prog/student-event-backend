@@ -416,6 +416,52 @@ app.patch('/api/users/:id/role', verifyAdmin, async (req, res) => {
     }
 });
 
+// Delete user (ADMIN ONLY)
+app.delete('/api/admin/users/:id', verifyAdmin, async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Validate if ID is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user ID format" });
+        }
+
+        // Prevent self-deletion
+        if (userId === req.user.userId) {
+            return res.status(400).json({ message: "Admins cannot delete their own account from the dashboard" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find user's registrations and decrement registeredCount for their events
+        const registrations = await Registration.find({ userId });
+        for (const reg of registrations) {
+            if (reg.eventId) {
+                await Event.findByIdAndUpdate(
+                    reg.eventId,
+                    { $inc: { registeredCount: -1 } },
+                    { new: true }
+                );
+            }
+        }
+
+        // Delete user's registrations
+        await Registration.deleteMany({ userId });
+
+        // Delete the user
+        await User.findByIdAndDelete(userId);
+
+        res.json({ message: "User and their registrations deleted successfully" });
+    } catch (error) {
+        console.error("DELETE USER ERROR:", error);
+        res.status(500).json({ message: "Failed to delete user", error: error.message });
+    }
+});
+
+
 // Get admin dashboard stats (ADMIN ONLY)
 app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
     try {
